@@ -49,7 +49,7 @@ const Sidebar = ({ isMenuOpen, project, setProject, isGenerating, setIsGeneratin
               return (
                 <div key={msg.id} className={`flex items-start gap-3 ${isUser ? "justify-end" : "justify-start"}`}>
                   {!isUser && (
-                    <div className='w-8 h-8 rounded-full bg-linear-to-br from-indigo-600 to-indigo-700 flex items-centre justify-center'>
+                    <div className='w-8 h-8 rounded-full bg-linear-to-br from-indigo-600 to-indigo-700 flex items-center justify-center'>
                       <BotIcon className='size-5 text-white' />
                     </div>
                   )}

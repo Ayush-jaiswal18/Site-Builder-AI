@@ -15,9 +15,9 @@ const corsOption = {
 
 app.use(cors(corsOption))
 
-app.all('/api/auth/{*any}', toNodeHandler(auth));
-
 app.use(express.json({limit: '50mb'}));
+
+app.all('/api/auth/{*any}', toNodeHandler(auth));
 
 app.get('/', (req: Request, res: Response) => {
     res.send('Server is Live!');

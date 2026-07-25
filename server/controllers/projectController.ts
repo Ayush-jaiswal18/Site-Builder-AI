@@ -245,3 +245,36 @@ export const deleteProject = async (req: Request, res: Response) => {
         });
     }
 };
+
+//! Controller for getting project code for preview
+export const getProjectPreview = async (req: Request, res: Response) => {
+    try {
+        const userId = req.userId;
+        const { projectId, versionId } = req.params;
+
+        if(!userId) {
+            return res.status(401).json({ message: 'Unauthorized' })
+        }
+
+    
+        const project = await prisma.websiteProject.findFirst({
+            where: {
+                id: Array.isArray(projectId) ? projectId[0] : projectId,
+                userId,
+            },
+            include: {versions: true}
+        });
+
+        if(!project) {
+            res.status(404).json({ message: 'Project not found' })
+        }
+
+        res.json({ project });
+    } catch (error: any) {
+        console.error(error.code || error.message);
+        return res.status(500).json({
+            message: error.message,
+        });
+    }
+};
+

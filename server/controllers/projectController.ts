@@ -279,7 +279,7 @@ export const getProjectPreview = async (req: Request, res: Response) => {
 };
 
 //! Get published projects
-export const getPublishedProject = async (req: Request, res: Response) => {
+export const getPublishedProjects = async (req: Request, res: Response) => {
     try {
         const projects = await prisma.websiteProject.findMany({
             where: { isPublished: true },

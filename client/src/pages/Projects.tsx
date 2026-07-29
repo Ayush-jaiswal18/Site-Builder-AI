@@ -1,16 +1,18 @@
 import { useEffect, useRef, useState } from "react"
 import { useNavigate, useParams, Link } from "react-router-dom"
 import type { Project } from "../types"
-import { ArrowBigDownDashIcon, ArrowBigDownIcon, EyeIcon, EyeOffIcon, FullscreenIcon, LaptopIcon, Loader2Icon, MessageSquareIcon, SaveIcon, SmartphoneIcon, TableIcon, TabletIcon, XIcon } from "lucide-react"
-import { dummyConversations, dummyProjects, dummyVersion } from "../assets/assets"
+import { ArrowBigDownDashIcon, EyeIcon, EyeOffIcon, FullscreenIcon, LaptopIcon, Loader2Icon, MessageSquareIcon, SaveIcon, SmartphoneIcon, TabletIcon, XIcon } from "lucide-react"
 import Sidebar from "../components/Sidebar"
 import ProjectPreview, { type ProjectPreviewRef } from "../components/ProjectPreview"
-
+import api from "@/configs/axios"
+import { toast } from "sonner"
+import { authClient } from "@/lib/auth-client"
 
 const Projects = () => {
 
   const { projectId } = useParams()
   const navigate = useNavigate()
+  const { data: session, isPending } = authClient.useSession();
 
   const [project, setProject] = useState<Project | null>(null)
   const [loading, setLoading] = useState(true)
@@ -24,15 +26,22 @@ const Projects = () => {
   const previewRef = useRef<ProjectPreviewRef>(null)
 
   const fetchProject = async () => {
-    const project = dummyProjects.find(project => project.id === projectId)
-    setTimeout(() => {
-      if (project) {
-        setProject({ ...project, conversation: dummyConversations, versions: dummyVersion });
-        setLoading(false)
-        setIsGenerating(project.current_code ? false : true)
-      }
-    }, 2000);
-  }
+
+    try {
+      const { data } = await api.get(`/api/user/project/${projectId}`);
+
+      console.log("Project:", data.project);
+      console.log("Current Code:", data.project?.current_code);
+      console.log("Conversations:", data.project?.conversation?.length);
+
+      setProject(data.project);
+      setIsGenerating(!data.project.current_code);
+    } catch (error) {
+      console.log(error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const saveProject = async () => {
 
@@ -41,14 +50,14 @@ const Projects = () => {
   // download code ( index.html )
   const downloadCode = () => {
     const code = previewRef.current?.getCode() || project?.current_code;
-    if(!code) {
-      if(isGenerating) {
+    if (!code) {
+      if (isGenerating) {
         return
       }
       return
     }
     const element = document.createElement('a');
-    const file = new Blob([code], {type: "text/html"});
+    const file = new Blob([code], { type: "text/html" });
     element.href = URL.createObjectURL(file);
     element.download = "index.html";
     document.body.appendChild(element);
@@ -60,8 +69,23 @@ const Projects = () => {
   }
 
   useEffect(() => {
-    fetchProject()
-  }, [])
+    if (session?.user) {
+      fetchProject();
+    } else if (!isPending && !session?.user) {
+      navigate("/")
+      toast("Please login to view your projects")
+    }
+  }, [session?.user, projectId])
+
+  useEffect(() => {
+    if (!projectId || !session?.user) return;
+
+    if (project?.current_code) return;
+
+    const interval = setInterval(fetchProject, 10000);
+
+    return () => clearInterval(interval);
+  }, [projectId, session?.user, project?.current_code]);
 
   if (loading) {
     return (
@@ -120,9 +144,9 @@ const Projects = () => {
       </div>
 
       <div className="flex-1 flex overflow-auto">
-        <Sidebar isMenuOpen={isMenuOpen} project={project} setProject={(p) => setProject(p)} isGenerating={isGenerating} setIsGenerating={setIsGenerating}/>
+        <Sidebar isMenuOpen={isMenuOpen} project={project} setProject={(p) => setProject(p)} isGenerating={isGenerating} setIsGenerating={setIsGenerating} />
         <div className="flex-1 p-2 pl-0">
-          <ProjectPreview ref={previewRef} project={project} isGenerating={isGenerating} device={device}/>
+          <ProjectPreview ref={previewRef} project={project} isGenerating={isGenerating} device={device} />
         </div>
       </div>
 

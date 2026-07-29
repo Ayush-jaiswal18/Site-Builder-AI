@@ -68,36 +68,45 @@ export const createUserProject = async (req: Request, res: Response) => {
             data: { credits: { decrement: 5 } }
         })
 
-        res.json({ projectId: project.id })
+        res.json({ projectId: project.id });
 
         //* Enhance user prompt
-        const promptEnhanceResponse = await openai.chat.completions.create({
-            model: "z-ai/gml-4.5-air:free",
-            messages: [
-                {
-                    role: "system",
-                    content: `
-      You are a prompt enhancement specialist. Take the user's website request and expand it into a detailed, comprehensive prompt that will help create the best possible website.
+        let enhancedPrompt = "";
 
-      Enhance the prompt by:
-      1. Adding specific design details (layout, color scheme, typography)
-      2. Specifying key sections and features
-      3. Describing the user experience and interactions
-      4. Including modern web design best practices
-      5. Mentioning responsive design requirements
-      6. Adding any missing but important elements
+        try {
+            const promptEnhanceResponse = await openai.chat.completions.create({
+                model: "openrouter/free",
+                messages: [
+                    {
+                        role: "system",
+                        content: `
+You are a prompt enhancement specialist. Take the user's website request and expand it into a detailed, comprehensive prompt that will help create the best possible website.
 
-      Return ONLY the enhanced prompt, nothing else. Make it detailed but concise (2-3 paragraphs max).
-      `,
-                },
-                {
-                    role: "user",
-                    content: initial_prompt,
-                },
-            ],
-        });
+Enhance the prompt by:
+1. Adding specific design details (layout, color scheme, typography)
+2. Specifying key sections and features
+3. Describing the user experience and interactions
+4. Including modern web design best practices
+5. Mentioning responsive design requirements
+6. Adding any missing but important elements
 
-        const enhancedPrompt = promptEnhanceResponse.choices[0].message.content
+Return ONLY the enhanced prompt, nothing else. Make it detailed but concise (2-3 paragraphs max).
+                        `,
+                    },
+                    {
+                        role: "user",
+                        content: initial_prompt,
+                    },
+                ],
+            });
+
+            enhancedPrompt = promptEnhanceResponse.choices[0].message.content || "";
+
+        } catch (error: any) {
+            console.error("❌ Prompt Enhancement Error");
+            console.error(error);
+            throw error;
+        }
 
         await prisma.conversation.create({
             data: {
@@ -116,44 +125,30 @@ export const createUserProject = async (req: Request, res: Response) => {
         })
 
         //* Generate website code
-        const codeGenerationResponse = await openai.chat.completions.create({
-            model: 'z-ai/gml-4.5-air:free',
-            messages: [
-                {
-                    role: 'system',
-                    content: `You are an expert web developer. Create a complete, production-ready, single-page website based on this request: "${enhancedPrompt}"
+        let code = "";
 
-                    CRITICAL REQUIREMENTS:
-                    - You MUST output valid HTML ONLY. 
-                    - Use Tailwind CSS for ALL styling
-                    - Include this EXACT script in the <head>: <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
-                    - Use Tailwind utility classes extensively for styling, animations, and responsiveness
-                    - Make it fully functional and interactive with JavaScript in <script> tag before closing </body>
-                    - Use modern, beautiful design with great UX using Tailwind classes
-                    - Make it responsive using Tailwind responsive classes (sm:, md:, lg:, xl:)
-                    - Use Tailwind animations and transitions (animate-*, transition-*)
-                    - Include all necessary meta tags
-                    - Use Google Fonts CDN if needed for custom fonts
-                    - Use placeholder images from https://placehold.co/600x400
-                    - Use Tailwind gradient classes for beautiful backgrounds
-                    - Make sure all buttons, cards, and components use Tailwind styling
+        try {
+            const codeGenerationResponse = await openai.chat.completions.create({
+                model: "openrouter/free",
+                messages: [
+                    {
+                        role: "system",
+                        content: `You are an expert web developer...`
+                    },
+                    {
+                        role: "user",
+                        content: enhancedPrompt
+                    }
+                ]
+            });
 
-                    CRITICAL HARD RULES:
-                    1. You MUST put ALL output ONLY into message.content.
-                    2. You MUST NOT place anything in "reasoning", "analysis", "reasoning_details", or any hidden fields.
-                    3. You MUST NOT include internal thoughts, explanations, analysis, comments, or markdown.
-                    4. Do NOT include markdown, explanations, notes, or code fences.
+            code = codeGenerationResponse.choices[0].message.content || "";
 
-                    The HTML should be complete and ready to render as-is with Tailwind CSS.`
-                },
-                {
-                    role: 'user',
-                    content: enhancedPrompt || ''
-                }
-            ]
-        })
-
-        const code = codeGenerationResponse.choices[0].message.content || '';
+        } catch (error: any) {
+            console.error("❌ Code Generation Error");
+            console.error(error);
+            throw error;
+        }
 
         //* Create Version for the project
         const version = await prisma.version.create({
@@ -187,12 +182,21 @@ export const createUserProject = async (req: Request, res: Response) => {
         })
 
     } catch (error: any) {
+        console.error("========== FINAL ERROR ==========");
+        console.error(error);
+        console.error("Code:", error?.code);
+        console.error("Message:", error?.message);
+        console.error("Status:", error?.status);
+        console.error("Response:", error?.response?.data);
+
         await prisma.user.update({
             where: { id: userId },
             data: { credits: { increment: 5 } }
-        })
-        console.log(error.code || error.message);
-        res.status(500).json({ message: error.message });
+        });
+
+        if (!res.headersSent) {
+            res.status(500).json({ message: error.message });
+        }
     }
 }
 
@@ -204,19 +208,19 @@ export const getUserProject = async (req: Request, res: Response) => {
             return res.status(401).json({ message: 'Unauthorized' })
         }
 
-        const {projectId} = req.params;
+        const { projectId } = req.params;
 
         const project = await prisma.websiteProject.findUnique({
-            where: {id: Array.isArray(projectId) ? projectId[0] : projectId, userId},
+            where: { id: Array.isArray(projectId) ? projectId[0] : projectId, userId },
             include: {
                 conversation: {
-                    orderBy: {timestamp: 'asc'}
+                    orderBy: { timestamp: 'asc' }
                 },
-                versions: {orderBy: {timestamp: 'asc'}}
+                versions: { orderBy: { timestamp: 'asc' } }
             }
         })
 
-        res.json({project})
+        res.json({ project })
 
     } catch (error: any) {
         console.log(error.code || error.message);
@@ -233,11 +237,11 @@ export const getUserProjects = async (req: Request, res: Response) => {
         }
 
         const projects = await prisma.websiteProject.findMany({
-            where: {userId},
-            orderBy: {updatedAt: 'desc'}
+            where: { userId },
+            orderBy: { updatedAt: 'desc' }
         })
 
-        res.json({projects})
+        res.json({ projects })
 
     } catch (error: any) {
         console.log(error.code || error.message);
@@ -256,19 +260,19 @@ export const togglePublish = async (req: Request, res: Response) => {
         const projectId = req.params;
 
         const project = await prisma.websiteProject.findUnique({
-            where: {id: Array.isArray(projectId) ? projectId[0] : projectId, userId}
+            where: { id: Array.isArray(projectId) ? projectId[0] : projectId, userId }
         })
 
-        if(!project) {
+        if (!project) {
             return res.status(404).json({ message: 'Project not found' })
         }
 
         await prisma.websiteProject.update({
-            where: {id: Array.isArray(projectId) ? projectId[0] : projectId},
-            data: {isPublished: !project.isPublished}
+            where: { id: Array.isArray(projectId) ? projectId[0] : projectId },
+            data: { isPublished: !project.isPublished }
         })
 
-        res.json({message: project.isPublished ? 'Project Unpublished' : 'Published Successfully'})
+        res.json({ message: project.isPublished ? 'Project Unpublished' : 'Published Successfully' })
 
     } catch (error: any) {
         console.log(error.code || error.message);

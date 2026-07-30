@@ -75,7 +75,7 @@ export const createUserProject = async (req: Request, res: Response) => {
 
         try {
             const promptEnhanceResponse = await openai.chat.completions.create({
-                model: "openrouter/free",
+                model: "inclusionai/ling-3.0-flash:free",
                 messages: [
                     {
                         role: "system",
@@ -129,7 +129,7 @@ Return ONLY the enhanced prompt, nothing else. Make it detailed but concise (2-3
 
         try {
             const codeGenerationResponse = await openai.chat.completions.create({
-                model: "openrouter/free",
+                model: "inclusionai/ling-3.0-flash:free",
                 messages: [
                     {
                         role: "system",

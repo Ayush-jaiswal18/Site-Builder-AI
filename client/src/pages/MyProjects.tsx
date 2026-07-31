@@ -13,11 +13,11 @@ const MyProjects = () => {
   const navigate = useNavigate()
 
   const fetchProject = async () => {
-    setProjects(dummyProjects)
-
-    setTimeout(() => {
-      setLoading(false)
-    }, 1000);
+    try {
+      
+    } catch (error) {
+      
+    }
   }
 
   const deleteProject = async (projectId: string) => {

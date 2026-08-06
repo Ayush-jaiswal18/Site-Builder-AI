@@ -297,6 +297,7 @@ export const purchaseCredits = async (req: Request, res: Response) => {
 
         const userId = req.userId;
         const { planId } = req.body as { planId: keyof typeof plans }
+        const origin = req.headers.origin as string;
 
         const plan: Plan = plans[planId]
 
@@ -316,8 +317,8 @@ export const purchaseCredits = async (req: Request, res: Response) => {
         const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string)
 
         const session = await stripe.checkout.sessions.create({
-            success_url: '',
-            cancel_url: '',
+            success_url: `${origin}/loading`,
+            cancel_url: `${origin}`,
             line_items: [
                 {
                     price_data: {
@@ -338,7 +339,7 @@ export const purchaseCredits = async (req: Request, res: Response) => {
             expires_at: Math.floor(Date.now() / 1000) + 30 * 60, //* Expire in 30 minutes
         });
 
-        res.json({payment_link: session.url})
+        res.json({ payment_link: session.url })
 
     } catch (error: any) {
         console.log(error.code || error.message);

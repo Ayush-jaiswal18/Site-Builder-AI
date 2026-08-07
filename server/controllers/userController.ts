@@ -308,7 +308,7 @@ export const purchaseCredits = async (req: Request, res: Response) => {
         const transaction = await prisma.transaction.create({
             data: {
                 userId: userId!,
-                planId: req.body.amount,
+                planId,
                 amount: plan.amount,
                 credits: plan.credits
             }

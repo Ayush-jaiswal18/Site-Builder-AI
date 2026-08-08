@@ -59,6 +59,16 @@ Every generation becomes a new version — so users can experiment without losin
 
 ---
 
+## 🏗️ System Architecture
+
+<div align="center">
+
+<img src="./client/src/assets/Architecture.png" alt="SiteBuilder AI System Architecture" width="100%">
+
+</div>
+
+---
+
 # 🚀 Core Features
 
 | Feature | Description |
@@ -762,4 +772,4 @@ If you found this project useful, consider giving it a ⭐
 **SiteBuilder AI — From prompt to production.**
 
 </div>
-```
+

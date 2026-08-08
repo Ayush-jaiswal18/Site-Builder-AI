@@ -156,36 +156,6 @@ The final version can be published publicly.
 
 ---
 
-# 🏗️ Architecture
-
-```text
-┌─────────────────────────────────────────────────────────────┐
-│                         CLIENT                              │
-│                                                             │
-│        React 19 + TypeScript + Vite + Tailwind             │
-│                                                             │
-│   Dashboard ── Editor ── Preview ── Versions ── Publish    │
-└────────────────────────────┬────────────────────────────────┘
-                             │
-                             │ REST API
-                             ▼
-┌─────────────────────────────────────────────────────────────┐
-│                         SERVER                              │
-│                                                             │
-│              Node.js + Express + TypeScript                │
-│                                                             │
-│   Auth │ Projects │ Versions │ AI │ Credits │ Payments      │
-└───────┬───────────┬──────────┬──────────┬───────────────────┘
-        │           │          │          │
-        ▼           ▼          ▼          ▼
-   Better Auth   Prisma      OpenAI     Stripe
-                    │
-                    ▼
-              PostgreSQL
-```
-
----
-
 # 🛠️ Tech Stack
 
 ## Frontend

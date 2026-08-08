@@ -1,6 +1,5 @@
-import React, { version } from 'react'
 import type { Message, Project, Version } from '../types';
-import { BotIcon, EyeIcon, Loader2Icon, SendIcon, TrafficCone, UserIcon } from 'lucide-react';
+import { BotIcon, EyeIcon, Loader2Icon, SendIcon, UserIcon } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import api from '@/configs/axios';
